@@ -168,15 +168,96 @@ xor
 test
 
 ;移位指令
+shl ax, cl;shift logical left, 逻辑左移
 shl ax, 1;左移;1次的时候用立即数
-sal al, cl;左移
-shr dword ptr value, cl;补0右移
+sal al, cl;shift arithmetic left, 算数左移
+shr dword ptr value, cl;shift logical right, 逻辑右移, 补0右移
 sar;补符号位右移(算术右移)
 
 ;循环移位
-rol;左移
-ror;右移
+rol;左移 rotate left
+ror;右移 
 rcl;带cf左移
 rcr;带cf右移
 
+;串处理指令
+cld; df置零, si, di++
+std; df置1, si, di--
+
+rep xxx;重复执行xxx, 并cx--, 直到cx=0
+repe/repz xxx;在rep基础上, 只有cmps或scas相等(zf=1)才重复
+repne/repnz;不相等, 其余同上
+
+movs es: byte ptr [di], [si]; 必须指明类型, 只能用es:[di]和es/ds:[si]; 执行时运输数据, 并根据df标志位自动加减di和si
+movsb al, es:[si];寄存器只能用累加器(ax, al), 仅源串可以超越(ds改成es); 还有movsw
+
+stos es: byte ptr [di]; 把al值给es:di, 只能是es:di, 需要指定类型
+stosb/stosw [di]; 同上, [di]可写可不写?
+
+lods es/ds: byte ptr [di]; 同上, 取出数据到al, ax中, 一般用于测试连续数据, 于是不和rep连用
+lodsb/lodsw;同上
+
+ins es: byte ptr [di], dx; 端口号要在dx,其余同上
+insb/insw
+
+outs dx, es/ds: byte ptr [di];同上, 端口号要在dx, 注意io速度
+outsb/outsw
+
+cmps es: byte ptr [di], es/ds: [si];同cmp与movs的规定;cmpsb;cmpsb
+scas es/ds: byte ptr [di];与al, ax比较, al/ax - [di];scasb;scasw
+
+;跳转
+;---
+;无条件
+jmp label
+
+;条件
+
+;根据单个标志位
+jz/je;zf=1, 为零
+jnz/jne;zf=0
+js;sf=1, 为负
+jns;sf=0
+jo;of=1, 有符号数溢出
+jno;of=0
+jp/jpe;pf=1, 偶数个1
+jnp/jpo
+
+
+;无符号数
+jc/jb/jnae;cf=1, 低于/无符号数进位
+jnc/jnb/jae
+jbe/jna;低于等于
+ja/jnbe;高于
+
+;有符号数
+jl/jnge;小于
+jge/jnl;大于等于
+jle/jng;小于等于
+jg/jnle;大于
+
+;用cx值
+jcxz; cx为0则跳转, 只能short短转移
+
 ;循环
+loop label;cx;只能short短转移
+loope/loopz label
+loopnz/loopne label
+
+;子程序;注意堆栈
+call
+ret
+
+;中断;注意堆栈;注意if
+int n
+iret
+
+;标志位
+cmc; cf取反
+;clx;stx
+
+;杂项
+nop;空
+hlt;停机, 直到外中断或reset
+wait;等待, 直到test信号
+lock;执行此语句期间锁定总线
